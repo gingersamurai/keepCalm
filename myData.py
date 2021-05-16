@@ -1,20 +1,44 @@
 import random
+from telebot import types
 
 
-def genTask():
-    mx = 100
 
-    a = random.randint(1, 100)
-    b = random.randint(1, 100)
-    task = f"{a} + {b} = "
-    ans = a + b
-    return [task, ans]
+def genTask(level):
+    level = min(level, 8)
+    level = max(level, 1)
+    typ = random.randint(1, 4)
+    a = random.randint(1, 10**level)
+    b = random.randint(1, 10**level)
+    task = str()
+    ans = int()
+    if typ == 1:
+        task = f'{a} * {b} ='
+        ans = a * b
+    elif typ == 2:
+        a *= 10
+        task = f'{a} // {b} ='
+        ans = a // b
+    elif typ == 3:
+        a *= 10
+        b *= 10
+        task = f'{a} + {b} ='
+        ans = a + b
+    else:
+        a *= 10
+        b *= 10
+        task = f'{a} - {b} ='
+        ans = a - b
+    return task, ans
 
 
-greet = r"""
-привет! поздравляю, ты попал в математическое рабство.
-все просто: я даю примерчики, а ты их решаешь.
-* нажми /solve  чтобы начать
-* нажми /start чтобы вернуться в меню
-* нажим /sendReview чтобы отправить отзыв моему создателю
-"""
+
+
+
+start_rmk = types.ReplyKeyboardMarkup(resize_keyboard=True)
+start_rmk.add( types.KeyboardButton('/menu'))
+
+menu_rmk = types.ReplyKeyboardMarkup(resize_keyboard=True)
+menu_rmk.add( types.KeyboardButton('/solve'), types.KeyboardButton('/sendReview'))
+
+solve_rmk = types.ReplyKeyboardMarkup(resize_keyboard=True)
+solve_rmk.add(types.KeyboardButton('/menu'))

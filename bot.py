@@ -6,12 +6,12 @@ import myData
 
 bot = telebot.TeleBot(config.TOKEN)
 lastQuery = -1
+
+
 def flood_protect(message):
-    print(message.text)
     global lastQuery
-    print(lastQuery, message.date)
-    if(message.date - lastQuery < 1):
-        bot.send_message(message.chat.id, 'тихо-тихо. Я устал уже..')
+    if (message.date - lastQuery < 1):
+        bot.send_message(message.chat.id, 'тихо-тихо. Я устал уже< подожди пару секунд')
         lastQuery = message.date
         return False
     else:
@@ -19,19 +19,25 @@ def flood_protect(message):
         return True
 
 
-
-
 # приветствие
 @bot.message_handler(commands=["start"])
 def greeting(message):
     if not flood_protect(message):
         return
-    markup_reply = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item_start = types.KeyboardButton(r'/start')
-    item_solve = types.KeyboardButton(r'/solve')
-    item_sendReview = types.KeyboardButton(r'/sendReview')
-    markup_reply.add(item_solve, item_start, item_sendReview)
-    bot.send_message(message.chat.id, myData.greet, reply_markup=markup_reply)
+    bot.send_message(message.chat.id, """
+    привет! поздравляю, ты попал в математическое рабство😺
+все просто: я даю примерчики, а ты их решаешь🧑‍🎓
+* нажми /menu чтобы попасть в меню
+    """, reply_markup=myData.start_rmk)
+
+
+# главное меню
+@bot.message_handler(commands=['menu'])
+def mainMenu(message):
+    bot.send_message(message.chat.id, """
+    * нажмите /solve чтобы начать решать 
+* нажмите /sendReview чтобы отправить отзыв моему создателю
+    """, reply_markup=myData.menu_rmk)
 
 
 # отправление отзыва
@@ -49,35 +55,48 @@ def review(message):
 def sendToAdmin(message):
     if not flood_protect(message):
         return
+    bot.send_message(message.chat.id, "Спасибо за отзыв!")
     bot.send_message(config.adminId, f'вам пришел отзыв!\n{message.from_user.username}: {message.text}')
+    mainMenu(message)
 
 
 # генерация задания
 @bot.message_handler(commands=["solve"])
-def genTask(message):
+def genTask(message, level = 1, cur = 0):
     time.sleep(1)
-    task, ans = myData.genTask()
-    userAns = bot.send_message(message.chat.id, task)
+    if cur == 5:
+        level += 1
+        cur = 0
+        bot.send_message(message.chat.id, f'Поднимаем ставки! удачи на {level} уровне:)')
+    elif cur < 0:
+        level -= 1
+        cur = 4
+        bot.send_message(message.chat.id, f'увы, теперь ты на {level} уровне:(')
+    bot.send_message(message.chat.id, f' тебя {level} уровень и {5 * (level-1) + cur} рейтинга')
+    task, ans = myData.genTask(level)
+    userAns = bot.send_message(message.chat.id, task, reply_markup=myData.solve_rmk)
     if not flood_protect(userAns):
         return
-    bot.register_next_step_handler(userAns, checkAns, ans, task)
-
+    bot.register_next_step_handler(userAns, checkAns, ans, task, level, cur)
 
 
 # проверяем ответ
-def checkAns(userAns, ans, task):
+def checkAns(userAns, ans, task, level, cur):
     if not flood_protect(userAns):
         return
-    if userAns.text == r"/start":
+    if userAns.text == r"/menu":
         greeting(userAns)
         return
     if userAns.text == str(ans):
         bot.send_message(userAns.chat.id, 'Отлично! у тебя получилось решить этот пример🥺')
+        cur += 1
     else:
         bot.send_message(userAns.chat.id, f'Нет😡 правильный ответ {ans}')
+        if level > 1:
+            cur -= 1
         if not config.keepCalm:
             bot.send_message(config.adminId, f'{userAns.from_user.username} думал, что {task} {userAns.text}, а не {ans}')
-    genTask(userAns)
+    genTask(userAns, level, cur)
 
 
 # # запуск бота
