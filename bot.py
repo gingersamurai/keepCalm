@@ -62,7 +62,7 @@ def sendToAdmin(message):
 
 # генерация задания
 @bot.message_handler(commands=["solve"])
-def genTask(message, level = 1, cur = 0):
+def genTask(message, level=1, cur=0):
     time.sleep(1)
     if cur == 5:
         level += 1
@@ -72,7 +72,7 @@ def genTask(message, level = 1, cur = 0):
         level -= 1
         cur = 4
         bot.send_message(message.chat.id, f'увы, теперь ты на {level} уровне:(')
-    bot.send_message(message.chat.id, f' тебя {level} уровень и {5 * (level-1) + cur} рейтинга')
+    bot.send_message(message.chat.id, f' тебя {level} уровень и {5 * (level - 1) + cur} рейтинга')
     task, ans = myData.genTask(level)
     userAns = bot.send_message(message.chat.id, task, reply_markup=myData.solve_rmk)
     if not flood_protect(userAns):
@@ -82,10 +82,14 @@ def genTask(message, level = 1, cur = 0):
 
 # проверяем ответ
 def checkAns(userAns, ans, task, level, cur):
+    print("fuck")
     if not flood_protect(userAns):
         return
     if userAns.text == r"/menu":
-        greeting(userAns)
+        bot.send_message(userAns.chat.id, 'Вы увернены, что хотите выйти? вам придется увеличивать рейтинг с нуля..')
+        ext = bot.send_message(userAns.chat.id,
+                               'чтобы выйти нажмите /menu еще раз, а чтобы остаться нажмите на любую другую кнопку')
+        bot.register_next_step_handler(ext, rUsure, userAns, ans, task, level, cur)
         return
     if userAns.text == str(ans):
         bot.send_message(userAns.chat.id, 'Отлично! у тебя получилось решить этот пример🥺')
@@ -95,9 +99,18 @@ def checkAns(userAns, ans, task, level, cur):
         if level > 1:
             cur -= 1
         if not config.keepCalm:
-            bot.send_message(config.adminId, f'{userAns.from_user.username} думал, что {task} {userAns.text}, а не {ans}')
+            bot.send_message(config.adminId,
+                             f'{userAns.from_user.username} думал, что {task} {userAns.text}, а не {ans}')
     genTask(userAns, level, cur)
 
+
+def rUsure(ext, userAns, ans, task, level, cur):
+    userAns.date = ext.date
+    if ext.text == '/menu':
+        mainMenu(ext)
+    else:
+        userAns = bot.send_message(ext.chat.id, task, reply_markup=myData.solve_rmk)
+        bot.register_next_step_handler(userAns, checkAns, ans, task, level, cur)
 
 # # запуск бота
 if __name__ == '__main__':
