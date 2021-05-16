@@ -87,7 +87,7 @@ def checkAns(userAns, ans, task, level, cur):
     if userAns.text == r"/menu":
         bot.send_message(userAns.chat.id, 'Вы увернены, что хотите выйти? вам придется увеличивать рейтинг с нуля..')
         ext = bot.send_message(userAns.chat.id,
-                               'чтобы выйти нажмите /menu еще раз, а чтобы остаться нажмите на любую другую кнопку')
+                               'чтобы выйти нажмите /menu еще раз, а чтобы остаться напишите любой текст')
         bot.register_next_step_handler(ext, rUsure, userAns, ans, task, level, cur)
         return
     if userAns.text == str(ans):
