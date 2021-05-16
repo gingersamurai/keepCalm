@@ -2,8 +2,10 @@ import random
 
 
 def genTask():
-    a = random.randint(1, 10)
-    b = random.randint(1, 10)
+    mx = 100
+
+    a = random.randint(1, 100)
+    b = random.randint(1, 100)
     task = f"{a} + {b} = "
     ans = a + b
     return [task, ans]
@@ -15,13 +17,4 @@ greet = r"""
 * нажми /solve  чтобы начать
 * нажми /start чтобы вернуться в меню
 * нажим /sendReview чтобы отправить отзыв моему создателю
-"""
-rightAns = """
-Отлично! у тебя получилось решить этот пример:)
-"""
-wrongAns = f"""
-Нет...правильный ответ 
-"""
-debugMessage = """
-(все работает)
 """
