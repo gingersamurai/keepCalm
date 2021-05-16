@@ -82,7 +82,6 @@ def genTask(message, level=1, cur=0):
 
 # проверяем ответ
 def checkAns(userAns, ans, task, level, cur):
-    print("fuck")
     if not flood_protect(userAns):
         return
     if userAns.text == r"/menu":
