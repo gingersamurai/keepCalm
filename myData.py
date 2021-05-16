@@ -16,7 +16,7 @@ def genTask(level):
     elif typ == 2:
         a = a * 10 + random.randint(0, 9)
         a -= a % b
-        task = f'{a} // {b} ='
+        task = f'{a} / {b} ='
         ans = a // b
     elif typ == 3:
         a = a * 10 + random.randint(0, 9)
