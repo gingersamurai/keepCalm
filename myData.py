@@ -30,7 +30,7 @@ def genTask(level):
         ans = a - b
     return task, ans
 
-#hello from master
+# hello from testing
 start_rmk = types.ReplyKeyboardMarkup(resize_keyboard=True)
 start_rmk.add(types.KeyboardButton('/menu'))
 
