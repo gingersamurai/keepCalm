@@ -7,11 +7,13 @@ import myData
 bot = telebot.TeleBot(config.TOKEN)
 lastQuery = -1
 
-
+# защита от флуда. Если разница между последними запросами меньше секунды, мы игнорируем
 def flood_protect(message):
     global lastQuery
     if (message.date - lastQuery < 1):
-        bot.send_message(message.chat.id, 'тихо-тихо. Я устал уже< подожди пару секунд')
+        bot.send_message(message.chat.id, 'Вы присылаете запросы слишком часто. Постарайтесь делать это хотя бы раз в '
+                                          '2 секунды')
+
         lastQuery = message.date
         return False
     else:
