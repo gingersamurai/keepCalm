@@ -11,7 +11,7 @@ lastQuery = -1
 def flood_protect(message):
     global lastQuery
     if (message.date - lastQuery < 1):
-        bot.send_message(message.chat.id, 'Вы присылаете запросы слишком часто. Постарайтесь делать это хотя бы раз в '
+        bot.send_message(message.chat.id, '|Вы присылаете запросы слишком часто. Постарайтесь делать это хотя бы раз в '
                                           '2 секунды')
 
         lastQuery = message.date
