@@ -37,7 +37,6 @@ class task:
         level = {self.level}
         statement = {self.statement}
         ans = {self.ans}
-
         """)
 
 
