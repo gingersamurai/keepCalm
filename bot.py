@@ -3,29 +3,15 @@ import telebot
 from telebot import types
 import config
 import myData
+import tasks
 
 bot = telebot.TeleBot(config.TOKEN)
 lastQuery = -1
-
-# защита от флуда. Если разница между последними запросами меньше секунды, мы игнорируем
-def flood_protect(message):
-    global lastQuery
-    if (message.date - lastQuery < 1):
-        bot.send_message(message.chat.id, 'Вы присылаете запросы слишком часто. Постарайтесь делать это хотя бы раз в '
-                                          '2 секунды')
-
-        lastQuery = message.date
-        return False
-    else:
-        lastQuery = message.date
-        return True
 
 
 # приветствие
 @bot.message_handler(commands=["start"])
 def greeting(message):
-    if not flood_protect(message):
-        return
     bot.send_message(message.chat.id, """
     привет! поздравляю, ты попал в математическое рабство😺
 все просто: я даю примерчики, а ты их решаешь🧑‍🎓
@@ -45,8 +31,6 @@ def mainMenu(message):
 # отправление отзыва
 @bot.message_handler(commands=["sendReview"])
 def review(message):
-    if not flood_protect(message):
-        return
     if config.keepCalm:
         bot.send_message(message.chat.id, "извините, мой создатель отдыхает")
         return
@@ -55,8 +39,6 @@ def review(message):
 
 
 def sendToAdmin(message):
-    if not flood_protect(message):
-        return
     bot.send_message(message.chat.id, "Спасибо за отзыв!")
     bot.send_message(config.adminId, f'вам пришел отзыв!\n{message.from_user.username}: {message.text}')
     mainMenu(message)
@@ -64,54 +46,46 @@ def sendToAdmin(message):
 
 # генерация задания
 @bot.message_handler(commands=["solve"])
-def genTask(message, level=1, cur=0):
-    time.sleep(1)
-    if cur == 5:
-        level += 1
-        cur = 0
-        bot.send_message(message.chat.id, f'Поднимаем ставки! удачи на {level} уровне:)')
-    elif cur < 0:
-        level -= 1
-        cur = 4
-        bot.send_message(message.chat.id, f'увы, теперь ты на {level} уровне:(')
-    bot.send_message(message.chat.id, f' тебя {level} уровень и {5 * (level - 1) + cur} рейтинга')
-    task, ans = myData.genTask(level)
-    userAns = bot.send_message(message.chat.id, task, reply_markup=myData.solve_rmk)
-    if not flood_protect(userAns):
-        return
-    bot.register_next_step_handler(userAns, checkAns, ans, task, level, cur)
+def createTask(message, nowRating=0, prevRating=0):
+    if nowRating // 5 > prevRating // 5:
+        bot.send_message(message.chat.id, f'поздравляю! Теперь ты на {nowRating // 5} уровне. Задания усложняются.')
+    elif nowRating // 5 < prevRating // 5:
+        bot.send_message(message.chat.id, f'соберись.. теперь ты на  {nowRating // 5} уровне.')
+    task = tasks.task(nowRating // 5)
+    userAns = bot.send_message(message.chat.id, task.statement, reply_markup=myData.solve_rmk)
+    bot.register_next_step_handler(userAns, checkAns, task, nowRating)
 
 
 # проверяем ответ
-def checkAns(userAns, ans, task, level, cur):
-    if not flood_protect(userAns):
-        return
+def checkAns(userAns, task, nowRating):
     if userAns.text == r"/menu":
         bot.send_message(userAns.chat.id, 'Вы увернены, что хотите выйти? вам придется увеличивать рейтинг с нуля..')
         ext = bot.send_message(userAns.chat.id,
-                               'чтобы выйти нажмите /menu еще раз, а чтобы остаться напишите любой текст')
-        bot.register_next_step_handler(ext, rUsure, userAns, ans, task, level, cur)
+                               'чтобы выйти нажмите /menu еще раз, а чтобы остаться нажмите /back',
+                               reply_markup=myData.ext_rmk)
+        bot.register_next_step_handler(ext, confirmExt, userAns, task, nowRating)
         return
-    if userAns.text == str(ans):
+    nextRating = nowRating
+    if userAns.text == str(task.ans):
         bot.send_message(userAns.chat.id, 'Отлично! у тебя получилось решить этот пример🥺')
-        cur += 1
+        nextRating += 1
     else:
-        bot.send_message(userAns.chat.id, f'Нет😡 правильный ответ {ans}')
-        if level > 1:
-            cur -= 1
+        bot.send_message(userAns.chat.id, f'Нет😡 правильный ответ {task.ans}')
+        if nowRating > 1:
+            nextRating -= 1
         if not config.keepCalm:
             bot.send_message(config.adminId,
-                             f'{userAns.from_user.username} думал, что {task} {userAns.text}, а не {ans}')
-    genTask(userAns, level, cur)
+                             f'{userAns.from_user.username} думал, что {task} {userAns.text}, а не {task.ans}')
+    createTask(userAns, nextRating, nowRating)
 
 
-def rUsure(ext, userAns, ans, task, level, cur):
-    userAns.date = ext.date
+def confirmExt(ext, userAns, task, nowRating):
     if ext.text == '/menu':
         mainMenu(ext)
     else:
-        userAns = bot.send_message(ext.chat.id, task, reply_markup=myData.solve_rmk)
-        bot.register_next_step_handler(userAns, checkAns, ans, task, level, cur)
+        userAns = bot.send_message(ext.chat.id, task.statement, reply_markup=myData.solve_rmk)
+        bot.register_next_step_handler(userAns, checkAns, task, nowRating)
+
 
 # # запуск бота
 if __name__ == '__main__':
