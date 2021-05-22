@@ -70,7 +70,6 @@ def sendToAdmin(message):
 # генерация задания
 @bot.message_handler(commands=["solve"])
 def createTask(message, nowRating=0, prevRating=0):
-    bot.send_message(message.chat.id, r'\It works')
     if nowRating // 5 > prevRating // 5:
         bot.send_message(message.chat.id, f'поздравляю! Теперь ты на {nowRating // 5} уровне. Задания усложняются.')
     elif nowRating // 5 < prevRating // 5:
