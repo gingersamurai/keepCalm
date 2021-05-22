@@ -29,19 +29,20 @@ def mainMenu(message):
 * нажмите /addNewTask чтобы добавить новое задание в раздел пользовательских
     """, reply_markup=markups.menu_rmk)
 
-#добавление своего задания
+
+# добавление своего задания
 @bot.message_handler(commands=['addNewTask'])
 def addTask(message):
     uTaskStatement = bot.send_message(message.chat.id, """
     напишите условие задания:
-    """)
+    """, reply_markup=markups.start_rmk)
     bot.register_next_step_handler(uTaskStatement, addAns)
 
 
 def addAns(uTaskStatement):
     uTaskAns = bot.send_message(uTaskStatement.chat.id, """
     Отлично! а теперь напишите правильный ответ
-    """)
+    """, reply_markup=markups.start_rmk)
     bot.register_next_step_handler(uTaskAns, addTofile, uTaskStatement)
 
 
@@ -56,7 +57,7 @@ def review(message):
     if config.keepCalm:
         bot.send_message(message.chat.id, "извините, мой создатель отдыхает")
         return
-    userReview = bot.send_message(message.chat.id, "напишите отзыв:")
+    userReview = bot.send_message(message.chat.id, "напишите отзыв:", reply_markup=markups.start_rmk)
     bot.register_next_step_handler(userReview, sendToAdmin)
 
 
@@ -69,12 +70,13 @@ def sendToAdmin(message):
 # генерация задания
 @bot.message_handler(commands=["solve"])
 def createTask(message, nowRating=0, prevRating=0):
+    bot.send_message(message.chat.id, r'\It works')
     if nowRating // 5 > prevRating // 5:
         bot.send_message(message.chat.id, f'поздравляю! Теперь ты на {nowRating // 5} уровне. Задания усложняются.')
     elif nowRating // 5 < prevRating // 5:
         bot.send_message(message.chat.id, f'соберись.. теперь ты на  {nowRating // 5} уровне.')
     task = taskClass.task(nowRating // 5)
-    userAns = bot.send_message(message.chat.id, task.statement, reply_markup=myData.solve_rmk)
+    userAns = bot.send_message(message.chat.id, task.statement, reply_markup=markups.solve_rmk)
     bot.register_next_step_handler(userAns, checkAns, task, nowRating)
 
 
@@ -97,7 +99,7 @@ def checkAns(userAns, task, nowRating):
             nextRating -= 1
         if not config.keepCalm:
             bot.send_message(config.adminId,
-                             f'{userAns.from_user.username} думал, что {task} {userAns.text}, а не {task.ans}')
+                             f'{userAns.from_user.username} думал, что {task.statement} {userAns.text}, а не {task.ans}')
     createTask(userAns, nextRating, nowRating)
 
 

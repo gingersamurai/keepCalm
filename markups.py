@@ -17,3 +17,4 @@ ext_rmk.add(types.KeyboardButton('/menu'), types.KeyboardButton('/back'))
 
 rUsure_rmk = types.ReplyKeyboardMarkup(resize_keyboard=True)
 rUsure_rmk.add(types.KeyboardButton('да'), types.KeyboardButton('нет'))
+
